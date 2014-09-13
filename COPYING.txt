@@ -1,0 +1,6 @@
+Portions of this library consist of code derived
+from the Python standard libary, and thus fall under the
+contents of PYTHON-LICENSE.txt.  Portions copied directly
+are marked "FROM PYTHON STD LIB"
+
+All other code is licensed as per LICENSE.txt
