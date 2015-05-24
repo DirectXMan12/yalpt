@@ -17,9 +17,10 @@ import warnings
 import six
 
 from yalpt import ansi_helper as ansi
+from yalpt import formatters
 
 
-__all__ = ["NoopFormatter", "LiterateInterpreter"]
+__all__ = ["LiterateInterpreter"]
 
 
 @contextlib.contextmanager
@@ -27,13 +28,8 @@ def noop_mgr(writer):
     yield writer
 
 
-class NoopFormatter(object):
-    def format(self, s):
-        return s
-
-
 class LiterateInterpreter(code.InteractiveConsole):
-    def __init__(self, text_formatter=NoopFormatter, use_ansi=True,
+    def __init__(self, text_formatter=formatters.NoopFormatter, use_ansi=True,
                  use_readline=True, *args, **kwargs):
         code.InteractiveConsole.__init__(self, *args, **kwargs)
 

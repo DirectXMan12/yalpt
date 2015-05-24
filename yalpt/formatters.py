@@ -6,6 +6,11 @@ import six
 from yalpt import ansi_helper as ansi
 
 
+class NoopFormatter(object):
+    def format(self, s):
+        return s
+
+
 class MarkdownFormatter(object):
     FORMAT_CODES = {'\x01': 1,
                     '\x04': 3,

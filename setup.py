@@ -23,4 +23,10 @@ setup(name='yalpt',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.3',
-      ])
+      ],
+      entry_points = {
+        'yalpt.formatters': [
+            'md = yalpt.formatters:MarkdownFormatter',
+            'none = yalpt.formatters:NoopFormatter',
+        ]
+      })

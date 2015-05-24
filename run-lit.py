@@ -6,6 +6,8 @@ import argparse
 import os.path
 import sys
 
+import pkg_resources as pkgres
+
 from yalpt import core
 
 
@@ -49,7 +51,12 @@ parser.add_argument('--no-interactive', action='store_false',
                          "after every code block")
 parser.add_argument('-f', '--format', default=None,
                     help="Format the text portions using ANSI "
-                         "escape codes.  Currently only accepts 'markdown'")
+                         "escape codes.  Currently accepts 'md' and 'none'. "
+                         "YALPT will attempt to automatically set this based "
+                         "on file extension.")
+parser.add_argument('-p', '--code-parser', default='doctest',
+                    help="Which method was used to embed code samples in the "
+                         "document.  Currently only accepts 'doctest")
 parser.add_argument('--no-readline', dest='readline', action='store_false',
                     default=True,
                     help="Don't import readline for completion and history")
@@ -60,16 +67,32 @@ parser.add_argument('--no-ansi', dest='ansi', action='store_false',
 
 args = parser.parse_args()
 
-if args.format == 'markdown':
-    from yalpt import markdown_formatter as mf
-    text_formatter = mf.MarkdownFormatter()
-else:
-    text_formatter = core.NoopFormatter()
-
 filename = os.path.basename(args.file)
 
 if not args.ansi and args.format:
     sys.exit("Cannot use a formatter without ANSI escape code support!")
+
+if args.format is None:
+    if '.' in filename:
+        args.format = filename.rsplit('.', 1)[-1]
+    else:
+        args.format = 'none'
+
+if not args.ansi:
+    args.format = 'none'
+
+formatters = pkgres.iter_entry_points('yalpt.formatters', args.format)
+
+try:
+    formatter_cls_loader = next(formatters)
+except StopIteration:
+    print("Warning: cannot load formatter for the .%s extension -- "
+          "no formatters found." % args.format, file=sys.stderr)
+
+    formatter_cls_loader = next(pkgres.iter_entry_points('yalpt.formatters',
+                                                         'none'))
+
+text_formatter = formatter_cls_loader.load()()
 
 interpreter = core.LiterateInterpreter(text_formatter=text_formatter,
                                        use_ansi=args.ansi,
