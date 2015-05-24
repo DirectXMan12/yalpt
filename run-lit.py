@@ -69,6 +69,18 @@ args = parser.parse_args()
 
 filename = os.path.basename(args.file)
 
+# code parser
+parsers = pkgres.iter_entry_points('yalpt.parsers', args.code_parser)
+
+try:
+    code_parser_cls_loader = next(parsers)
+except StopIteration:
+    sys.exit("Could not load code parser %s" % args.code_parser)
+
+
+code_parser = code_parser_cls_loader.load()()
+
+# text formatter
 if not args.ansi and args.format:
     sys.exit("Cannot use a formatter without ANSI escape code support!")
 
@@ -95,6 +107,7 @@ except StopIteration:
 text_formatter = formatter_cls_loader.load()()
 
 interpreter = core.LiterateInterpreter(text_formatter=text_formatter,
+                                       code_parser=code_parser,
                                        use_ansi=args.ansi,
                                        use_readline=args.readline)
 with open(args.file) as f:

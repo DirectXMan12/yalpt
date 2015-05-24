@@ -28,5 +28,8 @@ setup(name='yalpt',
         'yalpt.formatters': [
             'md = yalpt.formatters:MarkdownFormatter',
             'none = yalpt.formatters:NoopFormatter',
+        ],
+        'yalpt.parsers': [
+            'doctest = yalpt.parsers:DocTestParser',
         ]
       })

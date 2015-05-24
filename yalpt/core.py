@@ -18,6 +18,7 @@ import six
 
 from yalpt import ansi_helper as ansi
 from yalpt import formatters
+from yalpt import parsers
 
 
 __all__ = ["LiterateInterpreter"]
@@ -29,7 +30,8 @@ def noop_mgr(writer):
 
 
 class LiterateInterpreter(code.InteractiveConsole):
-    def __init__(self, text_formatter=formatters.NoopFormatter, use_ansi=True,
+    def __init__(self, text_formatter=formatters.NoopFormatter(),
+                 code_parser=parsers.DocTestParser(), use_ansi=True,
                  use_readline=True, *args, **kwargs):
         code.InteractiveConsole.__init__(self, *args, **kwargs)
 
@@ -39,6 +41,7 @@ class LiterateInterpreter(code.InteractiveConsole):
         self.exc_msg = None
         self.name = 'literate program'
         self.text_formatter = text_formatter
+        self.code_parser = code_parser
         self.use_ansi = use_ansi
         self.pause = True
         self.interactive = True
@@ -317,11 +320,11 @@ class LiterateInterpreter(code.InteractiveConsole):
         if not interactive and pause:
             self.write('Press enter to continue after a code block\n\n')
 
-        parser = doctest.DocTestParser()
+        parser = self.code_parser
         start = True
         self.chunks = parser.parse(lit_string, name)
         for chunk_ind, chunk in enumerate(self.chunks):
-            if isinstance(chunk, doctest.Example):
+            if isinstance(chunk, parsers.CodeChunk):
                 self._run_code(chunk, chunk_ind)
             elif not chunk:
                 continue
