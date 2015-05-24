@@ -69,7 +69,7 @@ If your file is in Markdown, you can use the Markdown formatter:
 
     $ run-lit.py -f markdown my-file.md
 
-By default, Markdown will drop into an interactive session after each code
+By default, YALPT will drop into an interactive session after each code
 block, so that you can experiment around with the results of that block before
 continuing on.  To continue, simply enter two blank lines at the interactive
 session (press enter twice).  If you wish to disable this, and only show an
