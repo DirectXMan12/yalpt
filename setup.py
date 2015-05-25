@@ -31,5 +31,6 @@ setup(name='yalpt',
         ],
         'yalpt.parsers': [
             'doctest = yalpt.parsers:DocTestParser',
+            'markdown = yalpt.parsers:MarkdownParser',
         ]
       })

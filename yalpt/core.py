@@ -231,33 +231,60 @@ class LiterateInterpreter(code.InteractiveConsole):
         if more:
             res, exc, more = self._process_code_line(lines[-1], res, more)
 
-        if len(res) > 0 or exc is not None:
-            # compare to the expected output
-            # TODO(sross): convert options to optionsflags
-            optionsflags = 0
+        if self.use_ansi:
+            mgr = ansi.BoxMaker(self)
+        else:
+            mgr = noop_mgr(self)
 
-            if self.use_ansi:
-                mgr = ansi.BoxMaker(self)
-            else:
-                mgr = noop_mgr(self)
 
-            checker = self._output_checker
-            if exc is None:
-                same = self._output_checker.check_output(chunk.want, res, 0)
-                if not same:
+        if chunk.want is not None or chunk.exc_msg is not None:
+            if len(res) > 0 or exc is not None:
+                # compare to the expected output
+                # TODO(sross): convert options to optionsflags
+                optionsflags = 0
+
+                checker = self._output_checker
+                if exc is None:
+                    same = self._output_checker.check_output(chunk.want,
+                                                             res, 0)
+                    if not same:
+                        self.write('\n')
+                        with mgr as maker:
+                            maker.write('Warning, output different from '
+                                        'expected:\n')
+                            maker.write('================================'
+                                        '========\n\n')
+                            diff = checker.output_difference(chunk, res,
+                                                             optionsflags)
+                            maker.write(diff)
+                        self.write('\n')
+                    else:
+                        self.write(res)
+                elif chunk.exc_msg is None:
                     self.write('\n')
                     with mgr as maker:
-                        maker.write('Warning, output different from '
-                                    'expected:\n')
-                        maker.write('================================'
-                                    '========\n\n')
-                        diff = checker.output_difference(chunk, res,
-                                                         optionsflags)
-                        maker.write(diff)
+                        maker.write('Warning, unexpected exception:\n')
+                        maker.write('==============================\n\n')
+                        maker.write(exc)
                     self.write('\n')
                 else:
-                    self.write(res)
-            elif chunk.exc_msg is None:
+                    same_ex = checker.check_output(chunk.exc_msg,
+                                                   exc, optionsflags)
+                    if not same_ex:
+                        self.write('\n')
+                        with mgr as maker:
+                            maker.write('Warning, exception different from '
+                                        'expected:\n')
+                            maker.write('=================================='
+                                        '=========\n\n')
+                            diff = checker.output_difference(chunk, res,
+                                                             optionsflags)
+                            maker.write(diff)
+                        self.write('\n')
+                    else:
+                        self.write(res)
+        else:
+            if exc is not None:
                 self.write('\n')
                 with mgr as maker:
                     maker.write('Warning, unexpected exception:\n')
@@ -265,21 +292,7 @@ class LiterateInterpreter(code.InteractiveConsole):
                     maker.write(exc)
                 self.write('\n')
             else:
-                same_ex = checker.check_output(chunk.exc_msg,
-                                               exc, optionsflags)
-                if not same_ex:
-                    self.write('\n')
-                    with mgr as maker:
-                        maker.write('Warning, exception different from '
-                                    'expected:\n')
-                        maker.write('=================================='
-                                    '=========\n\n')
-                        diff = checker.output_difference(chunk, res,
-                                                         optionsflags)
-                        maker.write(diff)
-                    self.write('\n')
-                else:
-                    self.write(res)
+                self.write(res)
 
         if not self.pause:
             self.write(sys.ps1 + '\n')
@@ -322,7 +335,7 @@ class LiterateInterpreter(code.InteractiveConsole):
 
         parser = self.code_parser
         start = True
-        self.chunks = parser.parse(lit_string, name)
+        self.chunks = list(parser.parse(lit_string, name))
         for chunk_ind, chunk in enumerate(self.chunks):
             if isinstance(chunk, parsers.CodeChunk):
                 self._run_code(chunk, chunk_ind)
