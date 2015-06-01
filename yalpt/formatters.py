@@ -19,7 +19,7 @@ class MarkdownFormatter(object):
                     '\x1D': ([4, 1], [48, 5, 0xea]),
                     '\x1E': ([], [48, 5, 0xea]),
                     '\x06': 4,
-                    '\x07': 3}
+                    '\x07': 9}
 
     FORMAT_CHARS = {'\x01': u'**',
                     '\x04': u'*',
@@ -143,9 +143,9 @@ class MarkdownFormatter(object):
         # first find bold, and then italic, then the rest
         s = self.BOLD_RE.sub('\x02\x01\\g<text>\x03', s)
         s = self.ITALICS_RE.sub('\x02\x04\\g<text>\x03', s)
-        s = self.HIGHLIGHT_RE.sub('\x02\x04\\g<text>\x03', s)
-        s = self.UNDERLINE_RE.sub('\x02\x04\\g<text>\x03', s)
-        s = self.STRIKETHROUGH_RE.sub('\x02\x04\\g<text>\x03', s)
+        s = self.HIGHLIGHT_RE.sub('\x02\x05\\g<text>\x03', s)
+        s = self.UNDERLINE_RE.sub('\x02\x06\\g<text>\x03', s)
+        s = self.STRIKETHROUGH_RE.sub('\x02\x07\\g<text>\x03', s)
 
         # Find and format headers
         s = self.HEADER_RE1.sub(ansi.with_codes(r'\g<start> \g<name> \g<end>',
