@@ -47,7 +47,10 @@ class LiterateInterpreter(code.InteractiveConsole):
         self.interactive = True
 
         if use_readline:
+            self._readline = __import__('readline')
             self._add_readline()
+        else:
+            self._readline = None
 
         self._env_driver = env_driver
 
@@ -67,6 +70,7 @@ class LiterateInterpreter(code.InteractiveConsole):
 
     def _add_readline(self):
         self.locals['__console_locals__'] = self.locals
+        self.locals['readline'] = self._readline
 
         def add_readline():
             # add support for completion
@@ -93,6 +97,7 @@ class LiterateInterpreter(code.InteractiveConsole):
         self.runfunction(add_readline)
 
         del self.locals['__console_locals__']
+        del self.locals['readline']
 
     def _interact_once(self, more):
         try:
@@ -164,6 +169,9 @@ class LiterateInterpreter(code.InteractiveConsole):
     # END FROM PYTHON STD LIB
 
     def _process_code_line(self, line, res, more):
+        if self._readline is not None:
+            self._readline.add_history(line)
+
         if more:
             self.write(sys.ps2)
         else:
