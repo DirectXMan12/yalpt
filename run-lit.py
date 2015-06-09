@@ -64,6 +64,10 @@ parser.add_argument('--no-ansi', dest='ansi', action='store_false',
                     default=True,
                     help="Don't use ANSI escape codes to provide color and "
                          "formatting.  Will not work with --format.")
+parser.add_argument('-e, --env-driver', dest='env_driver', default=None,
+                    help="Use the given env driver to set up the environment"
+                         "in which the code executes.  Use [] to pass a "
+                         "parameter.")
 
 args = parser.parse_args()
 
@@ -106,10 +110,30 @@ except StopIteration:
 
 text_formatter = formatter_cls_loader.load()()
 
+
+if args.env_driver:
+    if '[' in args.env_driver:
+        bracket_pos = args.env_driver.index('[')
+        env_driver_name = args.env_driver[:bracket_pos]
+        env_driver_args = [args.env_driver[bracket_pos + 1:-1]]
+    else:
+        env_driver_name = args.env_driver
+        env_driver_args = []
+
+    env_drivers = pkgres.iter_entry_points('yalpt.env_drivers',
+                                           args.env_driver)
+    try:
+        env_driver_loader = next(env_drivers)
+        env_driver = env_driver_loader.load()(*env_driver_args)
+    except StopIteration:
+        sys.exit("Error: cannot load env driver %s -- no such env driver found" % args.env_driver)
+        env_driver = None
+
 interpreter = core.LiterateInterpreter(text_formatter=text_formatter,
                                        code_parser=code_parser,
                                        use_ansi=args.ansi,
-                                       use_readline=args.readline)
+                                       use_readline=args.readline,
+                                       env_driver=env_driver)
 with open(args.file) as f:
     interpreter.interact(f.read(), filename,
                          pause=args.pause, interactive=args.interactive)

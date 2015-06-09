@@ -32,7 +32,7 @@ def noop_mgr(writer):
 class LiterateInterpreter(code.InteractiveConsole):
     def __init__(self, text_formatter=formatters.NoopFormatter(),
                  code_parser=parsers.DocTestParser(), use_ansi=True,
-                 use_readline=True, *args, **kwargs):
+                 use_readline=True, env_driver=None, *args, **kwargs):
         code.InteractiveConsole.__init__(self, *args, **kwargs)
 
         self._output_checker = doctest.OutputChecker()
@@ -48,6 +48,8 @@ class LiterateInterpreter(code.InteractiveConsole):
 
         if use_readline:
             self._add_readline()
+
+        self._env_driver = env_driver
 
         self._correct_path()
 
@@ -323,59 +325,75 @@ class LiterateInterpreter(code.InteractiveConsole):
             #sys.ps3 = '~~~[press enter to continue]~~~'
             sys.ps3 = '>>> '
 
+        if self._env_driver is not None:
+            extra_locals = self._env_driver.setup()
+            self.locals.update(extra_locals)
+            extra_banner = self._env_driver.banner
+            driver_text = " ({0})".format(self._env_driver.DRIVER_NAME)
+        else:
+            extra_banner = ""
+            driver_text = ""
+
         cprt = ('Type "help", "copyright", "credits" or "license" for '
                 'more information about Python.')
-        self.write("Literate Python Shell\nPython {ver} "
-                   "on {platform}\n{cprt}\n\n\n".format(ver=sys.version,
-                                                        platform=sys.platform,
-                                                        cprt=cprt))
+        self.write("Literate Python Shell{driver_text}\nPython {ver} "
+                   "on {platform}\n{cprt}\n"
+                   "{extra_banner}\n\n".format(driver_text=driver_text,
+                                               ver=sys.version,
+                                               platform=sys.platform,
+                                               cprt=cprt,
+                                               extra_banner=extra_banner))
 
         if not interactive and pause:
             self.write('Press enter to continue after a code block\n\n')
 
-        parser = self.code_parser
-        start = True
-        self.chunks = list(parser.parse(lit_string, name))
-        for chunk_ind, chunk in enumerate(self.chunks):
-            if isinstance(chunk, parsers.CodeChunk):
-                self._run_code(chunk, chunk_ind)
-            elif not chunk:
-                continue
+        try:
+            parser = self.code_parser
+            start = True
+            self.chunks = list(parser.parse(lit_string, name))
+            for chunk_ind, chunk in enumerate(self.chunks):
+                if isinstance(chunk, parsers.CodeChunk):
+                    self._run_code(chunk, chunk_ind)
+                elif not chunk:
+                    continue
+                else:
+                    if not start and pause and interactive:
+                        self.filename = "<stdin>"
+                        more = False
+                        blanks = 0
+                        while blanks < 2:
+                            blank, more = self._interact_once(more)
+
+                            if blank:
+                                blanks += 1
+                            else:
+                                blanks = 0
+
+                            if more is None:
+                                return
+
+                        # reset exc_msg so it doesn't get
+                        # raised after the next code block
+                        self.exc_msg = None
+                    elif not start and pause:
+                        self.no_echo_input(sys.ps3)
+
+                    self.write(self.text_formatter.format(chunk))
+
+                start = False
+
+            complete_msg = ("\n{file} complete! Continuing to "
+                            "interactive console...\n\n".format(file=self.name))
+
+            if self.use_ansi:
+                self.write(ansi.with_codes(complete_msg, 1))
             else:
-                if not start and pause and interactive:
-                    self.filename = "<stdin>"
-                    more = False
-                    blanks = 0
-                    while blanks < 2:
-                        blank, more = self._interact_once(more)
+                self.write(complete_msg)
 
-                        if blank:
-                            blanks += 1
-                        else:
-                            blanks = 0
-
-                        if more is None:
-                            return
-
-                    # reset exc_msg so it doesn't get
-                    # raised after the next code block
-                    self.exc_msg = None
-                elif not start and pause:
-                    self.no_echo_input(sys.ps3)
-
-                self.write(self.text_formatter.format(chunk))
-
-            start = False
-
-        complete_msg = ("\n{file} complete! Continuing to "
-                        "interactive console...\n\n".format(file=self.name))
-
-        if self.use_ansi:
-            self.write(ansi.with_codes(complete_msg, 1))
-        else:
-            self.write(complete_msg)
-
-        self.filename = "<stdin>"
-        more = False
-        while more is not None:
-            blank, more = self._interact_once(more)
+            self.filename = "<stdin>"
+            more = False
+            while more is not None:
+                blank, more = self._interact_once(more)
+        finally:
+            if self._env_driver is not None:
+                self._env_driver.teardown()
