@@ -215,9 +215,13 @@ class LiterateInterpreter(code.InteractiveConsole):
             tblist = tb = None
 
         if self.filename.startswith("<literate "):
-            map(self._fakeout.write, lst)
+            self._fakeout.write(''.join(lst))
         else:
-            map(self.write, lst)
+            if sys.excepthook is sys.__excepthook__:
+                self.write(''.join(lst))
+            else:
+                sys.excepthook(tp, value, tb)
+
 
         self.exc_msg = ''.join(exc_msg)
 
@@ -391,6 +395,7 @@ class LiterateInterpreter(code.InteractiveConsole):
                 self.write(complete_msg)
 
             self.filename = "<stdin>"
+            self.locals['con'] = self
             more = False
             while more is not None:
                 blank, more = self._interact_once(more)
