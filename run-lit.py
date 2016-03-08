@@ -111,6 +111,7 @@ except StopIteration:
 text_formatter = formatter_cls_loader.load()()
 
 
+env_driver = None
 if args.env_driver:
     if '[' in args.env_driver:
         bracket_pos = args.env_driver.index('[')
