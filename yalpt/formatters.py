@@ -113,7 +113,8 @@ class MarkdownFormatter(object):
             res = ansi.with_codes(text, *codes)
 
         if multiline and prefix is not None:
-            prefix_raw = ('{1}{0: <%s}{1}' % max_len).format(prefix, line_chars)
+            prefix_raw = ('{1}{0: <%s}{1}' % max_len).format(prefix,
+                                                             line_chars)
             res = '%s\n%s' % (ansi.with_codes(prefix_raw, *prefix_codes), res)
 
         return res

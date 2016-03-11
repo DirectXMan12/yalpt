@@ -1,6 +1,9 @@
 Yet Another Literate Python Tool
 ================================
 
+[![PyPI version](https://badge.fury.io/py/yalpt.svg)](https://badge.fury.io/py/yalpt)
+[![GitHub version](https://badge.fury.io/gh/directxman12%2Fyalpt.svg)](https://badge.fury.io/gh/directxman12%2Fyalpt)
+
 YALPT is a tool to assist in literate programming.  Specifically, it is
 designed for using literate programing to write interactive tutorials.
 
@@ -114,6 +117,42 @@ some other language, you can use the formatter for Markdown as a guideline, and
 submit a pull request on [GitHub](https://github.com/directxman12/yalpt).
 
 
+Can I use this on files that don't have doctest code blocks?
+------------------------------------------------------------
+
+YALPT now technically has support for running any code in Markdown code blocks.
+Any indented code blocks, as well as both untyped fenced code blocks and fenced
+code blocks marked as Python, will be interpreted as Python code blocks and
+executed.
+
+However, this functionality has not been tested as extensively as the the
+doctest parser, and is not as "self-documenting", since it does not include the
+output of each line like the doctest format does.
+
+If you wish to use a different parser, you can call YALPT with the `-p` flag:
+
+    $ run-lit.py -p markdown my-file.md
+
+
+My YALPT file needs a lot a setup that distracts from the main contents!
+------------------------------------------------------------------------
+
+While it's generally preferable to provide basic setup as part of the literate
+Python file, it can be cumbersome and distracting when too much boilerplate
+is required.  In this case, and "environment driver" may be specified.
+Environment drivers perform some setup and teardown, and may also provide
+objects that the literate Python files can use.
+
+To run YALPT with an environment driver, use the `-e` flag:
+
+    $ run-lit.py -e gssapi basic-tutorial.md
+
+One example of a package which provides an environment driver is
+[GSSAPI Console](https://pypi.python.org/pypi/gssapi_console).  This
+environment driver sets up a self-contained MIT Krb5 environment for use
+when writing literate Python files that involve GSSAPI.
+
+
 Reusing/Extending YALPT
 -----------------------
 
@@ -126,6 +165,21 @@ from which it inherits.
 
 Custom formatters should implement a format method which takes a string and
 returns a formatted string.
+
+Additionally, YALPT now has several setuptools entry points for extension:
+
+* `yalpt.formatters` can be used to introduce custom formatters for
+  pretty-printing the non-code portions of the files.  See `yalpt.formatters`
+  for more information.
+
+* `yalpt.parsers` can be used to introduce custom parsers to separate code
+  from non-code.  See `yalpt.parsers` for more information.
+
+* `yalpt.env_drivers` can be used to introduce environment drivers to provide
+  boilerplate setup for literate Python files.  Environment driver classes
+  should implement a `setup()` method (which returns a `dict` of locals to
+  include in the environment), a `teardown()` method, and have
+  `DRIVER_NAME` and `banner` properties/field.
 
 
 [1]: http://en.wikipedia.org/wiki/Literate_programming

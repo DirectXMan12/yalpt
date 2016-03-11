@@ -128,7 +128,9 @@ class LiterateInterpreter(code.InteractiveConsole):
 
         return (blank, more)
 
-    # BEGIN FROM PYTHON STD LIB (doctest)
+    # BEGIN FROM PYTHON STD LIB
+    # (extracted from the doctest module, made slight changes to the
+    # filename RE, and refactored _capture_output into its own method)
     __LINECACHE_FILENAME_RE = re.compile(r'<literate '
                                          r'(?P<name>.+)'
                                          r'\[(?P<chunknum>\d+)\]>$')
@@ -228,8 +230,7 @@ class LiterateInterpreter(code.InteractiveConsole):
             if sys.excepthook is sys.__excepthook__:
                 self.write(''.join(lst))
             else:
-                sys.excepthook(tp, value, tb)
-
+                sys.excepthook(extype, value, tb)
 
         self.exc_msg = ''.join(exc_msg)
 
@@ -249,7 +250,6 @@ class LiterateInterpreter(code.InteractiveConsole):
             mgr = ansi.BoxMaker(self)
         else:
             mgr = noop_mgr(self)
-
 
         if chunk.want is not None or chunk.exc_msg is not None:
             if len(res) > 0 or exc is not None:
@@ -334,7 +334,6 @@ class LiterateInterpreter(code.InteractiveConsole):
         try:
             sys.ps3
         except AttributeError:
-            #sys.ps3 = '~~~[press enter to continue]~~~'
             sys.ps3 = '>>> '
 
         if self._env_driver is not None:
@@ -394,8 +393,8 @@ class LiterateInterpreter(code.InteractiveConsole):
 
                 start = False
 
-            complete_msg = ("\n{file} complete! Continuing to "
-                            "interactive console...\n\n".format(file=self.name))
+            complete_msg = ("\n{file} complete! Continuing to interactive "
+                            "console...\n\n".format(file=self.name))
 
             if self.use_ansi:
                 self.write(ansi.with_codes(complete_msg, 1))

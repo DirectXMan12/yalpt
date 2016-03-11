@@ -56,7 +56,8 @@ parser.add_argument('-f', '--format', default=None,
                          "on file extension.")
 parser.add_argument('-p', '--code-parser', default='doctest',
                     help="Which method was used to embed code samples in the "
-                         "document.  Currently only accepts 'doctest")
+                         "document.  Currently accepts 'doctest' and "
+                         "'markdown'.")
 parser.add_argument('--no-readline', dest='readline', action='store_false',
                     default=True,
                     help="Don't import readline for completion and history")
@@ -127,7 +128,8 @@ if args.env_driver:
         env_driver_loader = next(env_drivers)
         env_driver = env_driver_loader.load()(*env_driver_args)
     except StopIteration:
-        sys.exit("Error: cannot load env driver %s -- no such env driver found" % args.env_driver)
+        sys.exit("Error: cannot load env driver %s -- no such "
+                 "env driver found" % args.env_driver)
         env_driver = None
 
 interpreter = core.LiterateInterpreter(text_formatter=text_formatter,

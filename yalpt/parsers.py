@@ -1,5 +1,6 @@
 import doctest
 
+
 class CodeChunk(object):
     def __init__(self, source_obj, source, want=None, exc_msg=None,
                  lineno=None, indent=0):
@@ -102,7 +103,8 @@ class MarkdownParser(object):
                     first = line
 
             if last_state != state:
-                if last_state in ('indented_python', 'fenced_python') or state == 'mid_fenced':
+                if (last_state in ('indented_python', 'fenced_python')
+                        or state == 'mid_fenced'):
                     raw_chunk = '\n'.join(acc)+'\n'
                     yield CodeChunk(raw_chunk, raw_chunk, lineno=block_start)
                     if first is not None:
@@ -124,7 +126,3 @@ class MarkdownParser(object):
                 elif state == 'last_line':
                     # it's the last line, and we're in a text block
                     yield '\n'.join(acc)
-
-
-
-s = '\nSome *text* here\n```python\nprint \'hi\'\nclass Cheese(object):\n    def __init__(self, a):\n            self.a = a\n\n    def b(self):\n            print self.a\n\nprint Cheese(\'3\').b()\n```\n\n```markdown\na fenced **markdown** block\n```\n\n    print "code in an indented block"\n    print 3 + 4\n\nand some more stuff\n'
